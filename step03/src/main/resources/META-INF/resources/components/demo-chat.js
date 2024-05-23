@@ -17,14 +17,36 @@ export class DemoChat extends LitElement {
       }
     `;
 
+    static properties = {
+        _insideStreaming: {type: Boolean}
+    }
+
+    constructor() {
+        super();
+        this._insideStreaming = false;
+    }
+
     connectedCallback() {
         const chatBot = document.getElementsByTagName("chat-bot")[0];
 
         const socket = new WebSocket("ws://" + window.location.host + "/customer-support-agent");
-        socket.onmessage = function (event) {
-            chatBot.sendMessage(event.data, {
-                right: false
-            });
+
+        socket.onmessage = (event) => {
+            if(event.data === "<BEGIN-STREAMING>") {
+                this._insideStreaming = true;
+                chatBot.sendMessage("", {
+                    right: false
+                });
+            } else if(event.data === "<END-STREAMING>") {
+                this._insideStreaming = false;
+            }
+            else if(this._insideStreaming) {
+                chatBot.messages[chatBot.messages.length - 1].message += event.data;
+            } else {
+                chatBot.sendMessage(event.data, {
+                    right: false
+                });
+            }
         }
 
         chatBot.addEventListener("sent", function (e) {

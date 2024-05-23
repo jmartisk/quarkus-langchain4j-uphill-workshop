@@ -21,6 +21,10 @@ public class CustomerSupportAgentWebSocket {
 
     @OnTextMessage
     public Multi<String> onTextMessage(String message) {
-        return customerSupportAgent.chat(message);
+        return Multi.createBy().concatenating().streams(
+                Multi.createFrom().item("<BEGIN-STREAMING>"),
+                customerSupportAgent.chat(message),
+                Multi.createFrom().item("<END-STREAMING>")
+        );
     }
 }
